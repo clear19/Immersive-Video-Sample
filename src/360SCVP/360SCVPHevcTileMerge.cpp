@@ -265,7 +265,7 @@ int32_t get_merge_solution(hevc_mergeStream *mergeStream)
         // Check if the input tile number is legitimate
         if(height == 0 || HR_hc == 0 || height % LR_tile_h || HR_ntile % HR_hc || LR_ntile % (height / LR_tile_h))
         {
-            printf("The input tile number is not legitimate!\n");
+            printf("The input tile number is not legitimate %d %d %d!\n", height % LR_tile_h, HR_ntile % HR_hc, LR_ntile % (height / LR_tile_h));
             return -1;
         }
 

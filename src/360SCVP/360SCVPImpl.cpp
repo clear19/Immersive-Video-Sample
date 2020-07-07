@@ -744,8 +744,8 @@ int TstitchStream::GenerateRwpkInfo(RegionWisePacking *dstRwpk)
     dstRwpk->projPicWidth = m_mergeStreamParam.highRes.width;
     int highRes_tile_width = m_mergeStreamParam.highRes.width / m_tileWidthCountOri[0];
     int highRes_tile_height = m_mergeStreamParam.highRes.height / m_tileHeightCountOri[0];
-    int lowRes_tile_width = m_mergeStreamParam.lowRes.width / m_tileWidthCountOri[1];
-    int lowRes_tile_height = m_mergeStreamParam.lowRes.height / m_tileHeightCountOri[1];
+    int lowRes_tile_width = m_tileWidthCountOri[1]!=0?m_mergeStreamParam.lowRes.width / m_tileWidthCountOri[1]:0;
+    int lowRes_tile_height = m_tileHeightCountOri[1]!=0?m_mergeStreamParam.lowRes.height / m_tileHeightCountOri[1]:0;
     dstRwpk->constituentPicMatching = 0;
 
     uint8_t highTilesNum = m_tileWidthCountSel[0] * m_tileHeightCountSel[0];
