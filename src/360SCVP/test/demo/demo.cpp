@@ -2,6 +2,8 @@
 #include <string.h>
 #include <fstream>
 #include "../../360SCVPAPI.h"
+#include "../../360SCVPBitstream.h"
+#include "hevcframespliter.h"
 
 param_360SCVP           param;
 unsigned char*          pInputBuffer;
@@ -25,18 +27,39 @@ int parseOneNalu();
 int parseNalu();
 int processMergeAndViewport();
 int processStitch();
+int getPicInfo0(Param_PicInfo* pPicInfo);
+int procFileMergeAndViewport(Param_PicInfo* pPicInfo);
 
 int main() 
 {
     init();
-
+    printf("[main]init\n");
     // parseOneNalu();
     // parseNalu();
-    processMergeAndViewport();
+    // processMergeAndViewport();
     // processStitch();
+    Param_PicInfo picInfo;
+    getPicInfo0(&picInfo);
+
+    procFileMergeAndViewport(&picInfo);
 
     deInit();
 
+    return 0;
+}
+
+
+int procFileMergeAndViewport(Param_PicInfo* pPicInfo)
+{
+    HevcFrameSplitter *splitter = new HevcFrameSplitter("../test.265");
+    HevcBuf frame;
+    while (!splitter->getOneFrame(&frame))
+    {
+        param.pInputBitstream = frame.buf;
+        param.inputBitstreamLen = frame.size;
+        processMergeAndViewport();
+    }
+    delete splitter;
     return 0;
 }
 
@@ -58,6 +81,33 @@ int parseOneNalu()
     printf("pareseOneNalu nalu type=%d size=%d", nal.naluType, nal.dataSize);
     I360SCVP_unInit(pI360SCVP);
     return 0;
+}
+
+int getPicInfo0(Param_PicInfo* pPicInfo)
+{
+    int ret = 0;
+    param.usedType = E_STREAM_STITCH_ONLY;
+    void* pI360SCVP = I360SCVP_Init(&param);
+    if (!pI360SCVP)
+    {
+        I360SCVP_unInit(pI360SCVP);
+        return -1;
+    }
+
+    Nalu nal;
+    nal.data = pInputBuffer;
+    nal.dataSize = bufferlen;
+    ret = I360SCVP_ParseNAL(&nal, pI360SCVP);
+    if (ret)
+    {
+        I360SCVP_unInit(pI360SCVP);
+        return ret;
+    }
+    // Param_PicInfo* pPicInfo,pic;
+    // pPicInfo = &pic;
+    ret = I360SCVP_GetParameter(pI360SCVP, ID_SCVP_PARAM_PICINFO, (void**)&pPicInfo);
+    I360SCVP_unInit(pI360SCVP);
+    return ret;
 }
 
 int parseNalu() 
@@ -115,9 +165,16 @@ int processMergeAndViewport()
     }
 
     ret = I360SCVP_process(&param, pI360SCVP);
-    if (pOutputFile)
-        fwrite(param.pOutputBitstream, 1, param.outputBitstreamLen, pOutputFile);
-    printf("I360SCVP_process ret=%d outLen=%d\n", ret, param.outputBitstreamLen);
+    if (ret != 0)
+    {
+        printf("I360SCVP_process ret=%d outLen=%d\n", ret, param.outputBitstreamLen);
+    } 
+    else
+    {
+        if (pOutputFile)
+            fwrite(param.pOutputBitstream, 1, param.outputBitstreamLen, pOutputFile);
+    }
+
     I360SCVP_unInit(pI360SCVP);
     return 0;
 }
